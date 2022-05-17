@@ -1,3 +1,4 @@
+#python3 exp1.py --wandb --batch_size=128 --group=test3
 import torch
 
 import pytorch_lightning as pl
@@ -13,17 +14,17 @@ from utils import save,load
 
 import argparse
 
-SWAV_EPOCHS = 5
-SAVE_EVERY_N_EPOCHS = 5
+SWAV_EPOCHS = 500
+SAVE_EVERY_N_EPOCHS = 100
 PROTOTYPES = 512
 #SINKHORN =
 
 parser = argparse.ArgumentParser(description='Parser of parameters.')
 parser.add_argument('--batch_size', type=int, help='batch_size', default=128)
-parser.add_argument('--epochs', type=int, help='number of epochs', default=10)
+parser.add_argument('--epochs', type=int, help='number of epochs', default=100)
 parser.add_argument('--wandb', action='store_true', help='using wandb')
-parser.add_argument('--group', type=str, help='group name in wandb', default='test1')
-parser.add_argument('--run_name', type=str, help='group name in wandb', default=None)
+parser.add_argument('--group', type=str, help='group name in wandb', default='Swav-LE-FT')
+parser.add_argument('--run_name', type=str, help='group name in wandb', default='Swav-LE-FT')
 parser.add_argument('--dataset', type=str, help='name of dataset', default='imagenette')
 
 params = parser.parse_args()
