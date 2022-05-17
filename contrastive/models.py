@@ -32,7 +32,7 @@ class SwavClassique(pl.LightningModule):
 
         # enable sinkhorn_gather_distributed to gather features from all gpus
         # while running the sinkhorn algorithm in the loss calculation
-        self.criterion = SwaVLoss(sinkhorn_gather_distributed=True, sinkhorn_epsilon=0.05)
+        self.criterion = SwaVLoss(sinkhorn_gather_distributed=True, sinkhorn_epsilon=0.03)
 
     def forward(self, x):
         x = self.backbone(x).flatten(start_dim=1)

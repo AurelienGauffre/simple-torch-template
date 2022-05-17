@@ -18,11 +18,11 @@ SAVE_EVERY_N_EPOCHS = 2
 
 parser = argparse.ArgumentParser(description='Parser of parameters.')
 parser.add_argument('--batch_size', type=int, help='batch_size', default=128)
-parser.add_argument('--epochs', type=int, help='number of epochs', default=100)
+parser.add_argument('--epochs', type=int, help='number of epochs', default=10)
 parser.add_argument('--wandb', action='store_true', help='using wandb')
 parser.add_argument('--group', type=str, help='group name in wandb', default='test1')
 parser.add_argument('--run_name', type=str, help='group name in wandb', default=None)
-parser.add_argument('--dataset', type=str, help='name of dataset', default='minimagenette')
+parser.add_argument('--dataset', type=str, help='name of dataset', default='imagenette')
 
 params = parser.parse_args()
 stem = pathlib.Path(__file__).stem if params.run_name is None else params.run_name #default name is the file name
