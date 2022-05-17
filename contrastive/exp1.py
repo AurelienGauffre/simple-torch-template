@@ -13,8 +13,10 @@ from utils import save,load
 
 import argparse
 
-SWAV_EPOCHS = 10
-SAVE_EVERY_N_EPOCHS = 2
+SWAV_EPOCHS = 5
+SAVE_EVERY_N_EPOCHS = 5
+PROTOTYPES = 512
+#SINKHORN =
 
 parser = argparse.ArgumentParser(description='Parser of parameters.')
 parser.add_argument('--batch_size', type=int, help='batch_size', default=128)
@@ -25,6 +27,7 @@ parser.add_argument('--run_name', type=str, help='group name in wandb', default=
 parser.add_argument('--dataset', type=str, help='name of dataset', default='imagenette')
 
 params = parser.parse_args()
+params.PROTOTYPES = PROTOTYPES
 stem = pathlib.Path(__file__).stem if params.run_name is None else params.run_name #default name is the file name
 params.root_dir = pathlib.Path(__file__).parent.resolve() / 'checkpoint' / stem
 
@@ -37,7 +40,7 @@ if __name__ == "__main__":
     dm_SwaV = ImagenetteDataModuleSwaV(params)
     checkpoint_callback=ModelCheckpoint(dirpath=params.root_dir,filename='SwaV-{epoch}-{train_loss:.2f}',every_n_epochs=SAVE_EVERY_N_EPOCHS,save_top_k=20,monitor="train_loss")
     trainer = pl.Trainer(max_epochs=SWAV_EPOCHS, gpus=gpus, strategy='ddp', sync_batchnorm=True, logger=wandb_logger,
-                         default_root_dir=params.root_dir,callbacks=[checkpoint_callback])
+                         default_root_dir=params.root_dir, callbacks=[checkpoint_callback])
 
     trainer.fit(model=model, datamodule=dm_SwaV)
     checkpoint_list = list(params.root_dir.glob('SwaV-*.ckpt'))

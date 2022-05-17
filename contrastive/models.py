@@ -28,7 +28,7 @@ class SwavClassique(pl.LightningModule):
         self.params = params
         self.backbone = get_reset_backbone(cifar10=False)
         self.projection_head = SwaVProjectionHead(512, 512, 128)
-        self.prototypes = SwaVPrototypes(128, n_prototypes=512)
+        self.prototypes = SwaVPrototypes(128, n_prototypes=params.PROTOTYPES)
 
         # enable sinkhorn_gather_distributed to gather features from all gpus
         # while running the sinkhorn algorithm in the loss calculation
@@ -124,8 +124,8 @@ class LinearEvaluation(pl.LightningModule):
         self.criterion = nn.CrossEntropyLoss()
 
     def forward(self, x):
-        self.backbone.eval()
         if self.freeze:
+            self.backbone.eval()
             with torch.no_grad():
                 x = self.backbone(x).flatten(start_dim=1)
         else:
@@ -160,3 +160,43 @@ class LinearEvaluation(pl.LightningModule):
         optim = torch.optim.Adam(self.parameters(), lr=0.001)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, self.params.epochs)
         return [optim], [{"scheduler": scheduler, "interval": "epoch"}]
+
+
+
+
+class SwavSup(pl.LightningModule):
+    def __init__(self,params):
+        super().__init__()
+        self.params = params
+        self.backbone = get_reset_backbone(cifar10=False)
+        self.projection_head_swav = SwaVProjectionHead(512, 512, 128)
+        self.prototypes = SwaVPrototypes(128, n_prototypes=params.PROTOTYPES)
+
+        # enable sinkhorn_gather_distributed to gather features from all gpus
+        # while running the sinkhorn algorithm in the loss calculation
+        self.criterion = SwaVLoss(sinkhorn_gather_distributed=True, sinkhorn_epsilon=0.03)
+        self.projection_head_sup = nn.Linear(512, 10)
+        self.criterion_sup = nn.CrossEntropyLoss()
+
+    def forward(self, x):
+        x = self.backbone(x).flatten(start_dim=1)
+        x = self.projection_head(x)
+        x = nn.functional.normalize(x, dim=1, p=2)
+        p = self.prototypes(x)
+        return p
+
+    def training_step(self, batch, batch_idx):
+        self.prototypes.normalize()
+        crops, _, _ = batch
+        multi_crop_features = [self.forward(x.to(self.device)) for x in crops]
+        high_resolution = multi_crop_features[:2]
+        low_resolution = multi_crop_features[2:]
+        loss = self.criterion(high_resolution, low_resolution)
+        self.log('train_loss', loss, on_step=False,
+                 on_epoch=True)  # https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html#train-epoch-level-operations
+        # self.log('train_accuracy', acc)
+        return loss
+
+    def configure_optimizers(self):
+        optim = torch.optim.Adam(self.parameters(), lr=0.001)
+        return optim
