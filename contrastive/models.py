@@ -22,10 +22,11 @@ from pl_bolts.datamodules import CIFAR10DataModule
 import wandb
 
 
-class SwaVMod(pl.LightningModule):
-    def __init__(self):
+class SwavClassique(pl.LightningModule):
+    def __init__(self,params):
         super().__init__()
-        self.backbone = get_reset_backbone(cifar10=True)
+        self.params = params
+        self.backbone = get_reset_backbone(cifar10=False)
         self.projection_head = SwaVProjectionHead(512, 512, 128)
         self.prototypes = SwaVPrototypes(128, n_prototypes=512)
 
@@ -60,7 +61,7 @@ class SwaVMod(pl.LightningModule):
 class ResnetClassique(pl.LightningModule):
     def __init__(self,params):
         super().__init__()
-        self.backbone = get_reset_backbone(cifar10=True)
+        self.backbone = get_reset_backbone(cifar10=False)
         self.projection_head = SimCLRProjectionHead(512, 512, 10)
         self.criterion = nn.CrossEntropyLoss()
         self.params=params
@@ -124,7 +125,10 @@ class LinearEvaluation(pl.LightningModule):
 
     def forward(self, x):
         self.backbone.eval()
-        with torch.no_grad():
+        if self.freeze:
+            with torch.no_grad():
+                x = self.backbone(x).flatten(start_dim=1)
+        else:
             x = self.backbone(x).flatten(start_dim=1)
         x = self.projection_head(x)
         return x
