@@ -34,27 +34,27 @@ stem = pathlib.Path(__file__).stem if params.run_name is None else params.run_na
 params.root_dir = pathlib.Path(__file__).parent.resolve() / 'checkpoint' / stem
 
 if __name__ == "__main__":
-    gpus = torch.cuda.device_count()
-    ####################################
-    # Baseline with a resnet :
-    ####################################
-    wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
-                               group=params.group, name='Resnet Baseline') if params.wandb else None
-
-    model = ResnetClassique(params)
-    dm_sup = ImagenetteDataModuleSup(params)
-    trainer = pl.Trainer(max_epochs=params.epochs, gpus=gpus, strategy='ddp', sync_batchnorm=True, logger=wandb_logger,
-                         default_root_dir=params.root_dir)
-
-    trainer.fit(model=model, datamodule=dm_sup)
-    wandb.finish()
+    # gpus = torch.cuda.device_count()
+    # ####################################
+    # # Baseline with a resnet :
+    # ####################################
+    # wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
+    #                            group=params.group, name='Resnet Baseline') if params.wandb else None
+    #
+    # model = ResnetClassique(params)
+    # dm_sup = ImagenetteDataModuleSup(params)
+    # trainer = pl.Trainer(max_epochs=params.epochs, gpus=gpus, strategy='ddp', sync_batchnorm=True, logger=wandb_logger,
+    #                      default_root_dir=params.root_dir)
+    #
+    # trainer.fit(model=model, datamodule=dm_sup)
+    # wandb.finish()
     ####################################
     # Baseline with a pretrained-resnet :
     ####################################
     wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
                                group=params.group, name='Resnet Pretrained Baseline') if params.wandb else None
 
-    model = ResnetClassique(params)
+    model = ResnetClassique(params,pretrained=True)
     dm_sup = ImagenetteDataModuleSup(params)
     trainer = pl.Trainer(max_epochs=params.epochs, gpus=gpus, strategy='ddp', sync_batchnorm=True, logger=wandb_logger,
                          default_root_dir=params.root_dir)
