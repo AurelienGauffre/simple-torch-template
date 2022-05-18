@@ -34,7 +34,7 @@ stem = pathlib.Path(__file__).stem if params.run_name is None else params.run_na
 params.root_dir = pathlib.Path(__file__).parent.resolve() / 'checkpoint' / stem
 
 if __name__ == "__main__":
-    # gpus = torch.cuda.device_count()
+    gpus = torch.cuda.device_count()
     # ####################################
     # # Baseline with a resnet :
     # ####################################
