@@ -1,4 +1,6 @@
 #python3 exp1.py --wandb --batch_size=128 --group=test3
+#oarsub -l /host=1/gpu=4,walltime=24:0:0 '/home/polaris/gauffrea/contrastive/contrastive/config1.sh'
+
 import torch
 
 import pytorch_lightning as pl
@@ -17,6 +19,7 @@ import argparse
 SWAV_EPOCHS = 500
 SAVE_EVERY_N_EPOCHS = 100
 PROTOTYPES = 512
+RANDAUGMENT = True
 #SINKHORN =
 
 parser = argparse.ArgumentParser(description='Parser of parameters.')
@@ -38,29 +41,29 @@ if __name__ == "__main__":
     # ####################################
     # # Baseline with a resnet :
     # ####################################
+    wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
+                               group=params.group, name='Resnet Baseline RandAugment') if params.wandb else None
+
+    model = ResnetClassique(params)
+    dm_sup = ImagenetteDataModuleSup(params,randaugment=RANDAUGMENT)
+    trainer = pl.Trainer(max_epochs=params.epochs, gpus=gpus, strategy='ddp', sync_batchnorm=True, logger=wandb_logger,
+                         default_root_dir=params.root_dir)
+
+    trainer.fit(model=model, datamodule=dm_sup)
+    wandb.finish()
+    ####################################
+    # Baseline with a pretrained-resnet :
+    ####################################
     # wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
-    #                            group=params.group, name='Resnet Baseline') if params.wandb else None
+    #                            group=params.group, name='Resnet Pretrained Baseline') if params.wandb else None
     #
-    # model = ResnetClassique(params)
+    # model = ResnetClassique(params,pretrained=True)
     # dm_sup = ImagenetteDataModuleSup(params)
     # trainer = pl.Trainer(max_epochs=params.epochs, gpus=gpus, strategy='ddp', sync_batchnorm=True, logger=wandb_logger,
     #                      default_root_dir=params.root_dir)
     #
     # trainer.fit(model=model, datamodule=dm_sup)
     # wandb.finish()
-    ####################################
-    # Baseline with a pretrained-resnet :
-    ####################################
-    wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
-                               group=params.group, name='Resnet Pretrained Baseline') if params.wandb else None
-
-    model = ResnetClassique(params,pretrained=True)
-    dm_sup = ImagenetteDataModuleSup(params)
-    trainer = pl.Trainer(max_epochs=params.epochs, gpus=gpus, strategy='ddp', sync_batchnorm=True, logger=wandb_logger,
-                         default_root_dir=params.root_dir)
-
-    trainer.fit(model=model, datamodule=dm_sup)
-    wandb.finish()
 
     ####################################
     # SWAV training

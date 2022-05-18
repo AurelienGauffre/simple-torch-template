@@ -95,15 +95,18 @@ class ImagenetteDataModuleSwaV(pl.LightningDataModule):
 
 class ImagenetteDataModuleSup(pl.LightningDataModule):
 
-    def __init__(self, params, data_dir=pathlib.Path(os.path.expanduser('~/datasets'))):
+    def __init__(self, params, data_dir=pathlib.Path(os.path.expanduser('~/datasets')),randaugment=None):
         super().__init__()
         self.params= params
         self.data_dir = data_dir /  params.dataset
-
+        self.randaugment =randaugment
     def train_dataloader(self):
+        RANDAUGMENT=[torchvision.transforms.RandAugment(num_ops=2,magnitude=9) if self.randaugment is not None else []]
+
         train_transforms = torchvision.transforms.Compose([
         torchvision.transforms.Resize(256, PIL.Image.BICUBIC),
         torchvision.transforms.CenterCrop(224),
+        *RANDAUGMENT,
         torchvision.transforms.ToTensor(),
         torchvision.transforms.Normalize(
                 mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
