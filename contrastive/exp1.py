@@ -24,7 +24,7 @@ RANDAUGMENT = True
 
 parser = argparse.ArgumentParser(description='Parser of parameters.')
 parser.add_argument('--batch_size', type=int, help='batch_size', default=128)
-parser.add_argument('--epochs', type=int, help='number of epochs', default=400)
+parser.add_argument('--epochs', type=int, help='number of epochs', default=100)
 parser.add_argument('--wandb', action='store_true', help='using wandb')
 parser.add_argument('--group', type=str, help='group name in wandb', default='Swav-LE-FT')
 parser.add_argument('--run_name', type=str, help='group name in wandb', default='Swav-LE-FT')
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     ####################################
     # SWAV Evaluation
     ####################################
-    # checkpoint_list = list(params.root_dir.glob('SwaV-*.ckpt'))
+    # checkpoint_list = list(params.root_dir.glob('SwaV*.ckpt'))
     # print(f'Finetuning on :{checkpoint_list}')
     # for ckpt in checkpoint_list:
         # dm_sup = ImagenetteDataModuleSup(params)

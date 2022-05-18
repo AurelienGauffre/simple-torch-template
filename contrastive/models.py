@@ -165,38 +165,72 @@ class LinearEvaluation(pl.LightningModule):
 
 
 
-class SwavSup(pl.LightningModule):
+class MTLSwavSup(pl.LightningModule):
     def __init__(self,params):
         super().__init__()
         self.params = params
-        self.backbone = get_reset_backbone(cifar10=False)
+        self.backbone = get_reset_backbone()
         self.projection_head_swav = SwaVProjectionHead(512, 512, 128)
         self.prototypes = SwaVPrototypes(128, n_prototypes=params.PROTOTYPES)
+        self.criterion_swav = SwaVLoss(sinkhorn_gather_distributed=True, sinkhorn_epsilon=0.03)
 
-        # enable sinkhorn_gather_distributed to gather features from all gpus
-        # while running the sinkhorn algorithm in the loss calculation
-        self.criterion = SwaVLoss(sinkhorn_gather_distributed=True, sinkhorn_epsilon=0.03)
         self.projection_head_sup = nn.Linear(512, 10)
         self.criterion_sup = nn.CrossEntropyLoss()
 
-    def forward(self, x):
+    def forward(self, x,crops):
+        multi_crop_features = []
         x = self.backbone(x).flatten(start_dim=1)
-        x = self.projection_head(x)
-        x = nn.functional.normalize(x, dim=1, p=2)
-        p = self.prototypes(x)
-        return p
+        logits = self.projection_head_sup(x)
+
+        for crop in crops:
+            z = self.backbone(crop).flatten(start_dim=1)
+            z = self.projection_head_swav(z)
+            z = nn.functional.normalize(z, dim=1, p=2)
+            p = self.prototypes(z)
+            multi_crop_features += [p]
+
+        return logits,multi_crop_features
+    def forward_val(self,x):
+        x = self.backbone(x).flatten(start_dim=1)
+        x = self.projection_head_sup(x)
+        return x
+
 
     def training_step(self, batch, batch_idx):
         self.prototypes.normalize()
-        crops, _, _ = batch
-        multi_crop_features = [self.forward(x.to(self.device)) for x in crops]
+        crops, _, _ = batch['SwaV']
+        x, y, _ = batch['Sup']
+        logits,multi_crop_features = self(x,crops)
+
+        preds = torch.argmax(logits, dim=1)
+        acc = accuracy(preds, y)
+
         high_resolution = multi_crop_features[:2]
         low_resolution = multi_crop_features[2:]
-        loss = self.criterion(high_resolution, low_resolution)
+        train_loss_swav = self.criterion_swav(high_resolution, low_resolution)
+        train_loss_sup = self.criterion_sup(logits, y)
+        loss =  train_loss_swav + train_loss_sup
         self.log('train_loss', loss, on_step=False,
                  on_epoch=True)  # https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html#train-epoch-level-operations
-        # self.log('train_accuracy', acc)
+        self.log('train_loss_swav', train_loss_swav, on_step=False,
+                 on_epoch=True)
+        self.log('train_loss_sup', train_loss_sup, on_step=False,
+                 on_epoch=True)
+        self.log('train_accuracy', acc, on_step=False,
+                 on_epoch=True)
         return loss
+
+    def validation_step(self, batch, stage=None):
+        x, y, _ = batch
+        logits = self.forward_val(x)
+        loss = self.criterion_sup(logits, y)
+        preds = torch.argmax(logits, dim=1)
+        acc = accuracy(preds, y)
+        self.log('val_loss', loss, on_step=False,
+                 on_epoch=True)
+        self.log('val_accuracy', acc, on_step=False,
+                 on_epoch=True)
+
 
     def configure_optimizers(self):
         optim = torch.optim.Adam(self.parameters(), lr=0.001)
