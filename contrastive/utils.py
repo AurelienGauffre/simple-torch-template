@@ -19,8 +19,8 @@ def load(model, model_path):
     model.load_state_dict(torch.load(model_path))
 
 
-def get_reset_backbone(cifar10=False):
-    resnet = torchvision.models.resnet18()
+def get_reset_backbone(cifar10=False,pretrained=False):
+    resnet = torchvision.models.resnet18(pretrained=pretrained)
     if cifar10:
         # Modification for cifar10 of resenet
         resnet.conv1 = nn.Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)

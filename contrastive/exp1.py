@@ -35,6 +35,36 @@ params.root_dir = pathlib.Path(__file__).parent.resolve() / 'checkpoint' / stem
 
 if __name__ == "__main__":
     gpus = torch.cuda.device_count()
+    ####################################
+    # Baseline with a resnet :
+    ####################################
+    wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
+                               group=params.group, name='Resnet Baseline') if params.wandb else None
+
+    model = ResnetClassique(params)
+    dm_sup = ImagenetteDataModuleSup(params)
+    trainer = pl.Trainer(max_epochs=params.epochs, gpus=gpus, strategy='ddp', sync_batchnorm=True, logger=wandb_logger,
+                         default_root_dir=params.root_dir)
+
+    trainer.fit(model=model, datamodule=dm_sup)
+    wandb.finish()
+    ####################################
+    # Baseline with a pretrained-resnet :
+    ####################################
+    wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
+                               group=params.group, name='Resnet Pretrained Baseline') if params.wandb else None
+
+    model = ResnetClassique(params)
+    dm_sup = ImagenetteDataModuleSup(params)
+    trainer = pl.Trainer(max_epochs=params.epochs, gpus=gpus, strategy='ddp', sync_batchnorm=True, logger=wandb_logger,
+                         default_root_dir=params.root_dir)
+
+    trainer.fit(model=model, datamodule=dm_sup)
+    wandb.finish()
+
+    ####################################
+    # SWAV training
+    ####################################
     # wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
     #                            group=params.group, name='SwaV_pretraining') if params.wandb else None
     #
@@ -45,10 +75,14 @@ if __name__ == "__main__":
     #                      default_root_dir=params.root_dir, callbacks=[checkpoint_callback])
     #
     # trainer.fit(model=model, datamodule=dm_SwaV)
-    checkpoint_list = list(params.root_dir.glob('SwaV-*.ckpt'))
-    print(f'Finetuning on :{checkpoint_list}')
     # wandb.finish()
-    for ckpt in checkpoint_list:
+
+    ####################################
+    # SWAV Evaluation
+    ####################################
+    # checkpoint_list = list(params.root_dir.glob('SwaV-*.ckpt'))
+    # print(f'Finetuning on :{checkpoint_list}')
+    # for ckpt in checkpoint_list:
         # dm_sup = ImagenetteDataModuleSup(params)
         # print(ckpt)
         # wandb_logger_FT = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
@@ -62,19 +96,19 @@ if __name__ == "__main__":
         # trainerFT.fit(modelFT,dm_sup)
         # wandb.finish()
 
-        dm_sup = ImagenetteDataModuleSup(params)
-        print(ckpt)
-
-        wandb_logger_LE = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
-                                      group=params.group, name=f"LE-SwaV-{ckpt.stem.split('-')[1]}")
-
-        model_loaded = SwavClassique.load_from_checkpoint(ckpt, params=params)
-        modelLE = LinearEvaluation(params, model_loaded.backbone,freeze=True)
-        trainerLE = pl.Trainer(max_epochs=params.epochs, gpus=gpus, strategy='ddp', sync_batchnorm=True,
-                               logger=wandb_logger_LE,
-                               default_root_dir=params.root_dir)
-        trainerLE.fit(modelLE, dm_sup)
-        wandb.finish()
+        # dm_sup = ImagenetteDataModuleSup(params)
+        # print(ckpt)
+        #
+        # wandb_logger_LE = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
+        #                               group=params.group, name=f"LE-SwaV-{ckpt.stem.split('-')[1]}")
+        #
+        # model_loaded = SwavClassique.load_from_checkpoint(ckpt, params=params)
+        # modelLE = LinearEvaluation(params, model_loaded.backbone,freeze=True)
+        # trainerLE = pl.Trainer(max_epochs=params.epochs, gpus=gpus, strategy='ddp', sync_batchnorm=True,
+        #                        logger=wandb_logger_LE,
+        #                        default_root_dir=params.root_dir)
+        # trainerLE.fit(modelLE, dm_sup)
+        # wandb.finish()
 
 
 

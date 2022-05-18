@@ -59,10 +59,11 @@ class SwavClassique(pl.LightningModule):
 
 
 class ResnetClassique(pl.LightningModule):
-    def __init__(self,params):
+    def __init__(self,params,pretrained=False):
         super().__init__()
-        self.backbone = get_reset_backbone(cifar10=False)
-        self.projection_head = SimCLRProjectionHead(512, 512, 10)
+        self.backbone = get_reset_backbone(cifar10=False,pretrained=pretrained)
+        #self.projection_head = SimCLRProjectionHead(512, 512, 10)
+        self.projection_head = nn.Linear(512,10)
         self.criterion = nn.CrossEntropyLoss()
         self.params=params
 
