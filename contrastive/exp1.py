@@ -16,16 +16,16 @@ from utils import save,load
 
 import argparse
 
-SWAV_EPOCHS = 1
-SAVE_EVERY_N_EPOCHS = 1
+SWAV_EPOCHS = 600
+SAVE_EVERY_N_EPOCHS = 200
 PROTOTYPES = 512
 RANDAUGMENT = True
 STRATEGY = 'ddp'
 #SINKHORN =
 
 parser = argparse.ArgumentParser(description='Parser of parameters.')
-parser.add_argument('--batch_size', type=int, help='batch_size', default=4)
-parser.add_argument('--epochs', type=int, help='number of epochs', default=1)
+parser.add_argument('--batch_size', type=int, help='batch_size', default=256)
+parser.add_argument('--epochs', type=int, help='number of epochs', default=100)
 parser.add_argument('--wandb', action='store_true', help='using wandb')
 parser.add_argument('--group', type=str, help='group name in wandb', default='Swav-LE-FT')
 parser.add_argument('--exp_name', type=str, help='exp name', default='Swav-LE-FT-imagenette320')
@@ -42,7 +42,7 @@ n_gpus = torch.cuda.device_count()
 print(f'Training with a batch size of {params.batch_size}')
 if STRATEGY == 'ddp':
     params.batch_size = int(params.batch_size/n_gpus) #todo add warning if not divisble
-    print(f'DDP Strategy with {n_gpus}: effective batch size on each GPU is {params.batch_size}.')
+    print(f'DDP Strategy with {n_gpus} GPU: effective batch size on each GPU is {params.batch_size}.')
 
 if __name__ == "__main__":
 
