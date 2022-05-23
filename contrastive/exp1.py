@@ -16,16 +16,16 @@ from utils import save,load
 
 import argparse
 
-SWAV_EPOCHS = 600
-SAVE_EVERY_N_EPOCHS = 200
+SWAV_EPOCHS = 1
+SAVE_EVERY_N_EPOCHS = 1
 PROTOTYPES = 512
 RANDAUGMENT = True
 STRATEGY = 'ddp'
 #SINKHORN =
 
 parser = argparse.ArgumentParser(description='Parser of parameters.')
-parser.add_argument('--batch_size', type=int, help='batch_size', default=256)
-parser.add_argument('--epochs', type=int, help='number of epochs', default=100)
+parser.add_argument('--batch_size', type=int, help='batch_size', default=4)
+parser.add_argument('--epochs', type=int, help='number of epochs', default=1)
 parser.add_argument('--wandb', action='store_true', help='using wandb')
 parser.add_argument('--group', type=str, help='group name in wandb', default='Swav-LE-FT')
 parser.add_argument('--exp_name', type=str, help='exp name', default='Swav-LE-FT-imagenette320')
