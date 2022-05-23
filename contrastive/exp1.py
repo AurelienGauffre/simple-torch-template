@@ -28,8 +28,8 @@ parser.add_argument('--batch_size', type=int, help='batch_size', default=256)
 parser.add_argument('--epochs', type=int, help='number of epochs', default=100)
 parser.add_argument('--wandb', action='store_true', help='using wandb')
 parser.add_argument('--group', type=str, help='group name in wandb', default='Swav-LE-FT')
-parser.add_argument('--exp_name', type=str, help='exp name', default='Swav-LE-FT-imagenette160')
-parser.add_argument('--dataset', type=str, help='name of dataset', default='imagenette160px')
+parser.add_argument('--exp_name', type=str, help='exp name', default='Swav-LE-FT-imagenette320')
+parser.add_argument('--dataset', type=str, help='name of dataset', default='imagenette320px')
 
 
 params = parser.parse_args()

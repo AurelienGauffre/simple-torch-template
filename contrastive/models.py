@@ -48,7 +48,7 @@ class SwavClassique(pl.LightningModule):
         high_resolution = multi_crop_features[:2]
         low_resolution = multi_crop_features[2:]
         loss = self.criterion(high_resolution, low_resolution)
-        self.log('train_loss', loss, on_step=False,
+        self.log('train_loss_swav', loss, on_step=False,
                  on_epoch=True)  # https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html#train-epoch-level-operations
         # self.log('train_accuracy', acc)
         return loss
@@ -85,7 +85,7 @@ class ResnetClassique(pl.LightningModule):
         loss = self.criterion(logits, y)
         preds = torch.argmax(logits, dim=1)
         acc = accuracy(preds, y)
-        self.log('train_loss', loss, on_step=False,
+        self.log('train_loss_sup', loss, on_step=False,
                  on_epoch=True)  # https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html#train-epoch-level-operations
         self.log('train_accuracy', acc, on_step=False,
                  on_epoch=True)
@@ -140,7 +140,7 @@ class LinearEvaluation(pl.LightningModule):
         loss = self.criterion(logits, y)
         preds = torch.argmax(logits, dim=1)
         acc = accuracy(preds, y)
-        self.log('train_loss', loss, on_step=False,
+        self.log('train_loss_sup', loss, on_step=False,
                  on_epoch=True)  # https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html#train-epoch-level-operations
         self.log('train_accuracy', acc, on_step=False,
                  on_epoch=True)
@@ -210,7 +210,7 @@ class MTLSwavSup(pl.LightningModule):
         train_loss_swav = self.criterion_swav(high_resolution, low_resolution)
         train_loss_sup = self.criterion_sup(logits, y)
         loss =  train_loss_swav + train_loss_sup
-        self.log('train_loss', loss, on_step=False,
+        self.log('total_train_loss', loss, on_step=False,
                  on_epoch=True)  # https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html#train-epoch-level-operations
         self.log('train_loss_swav', train_loss_swav, on_step=False,
                  on_epoch=True)
