@@ -101,7 +101,7 @@ class ImagenetteDataModuleSup(pl.LightningDataModule):
         self.data_dir = data_dir /  params.dataset
         self.randaugment =randaugment
     def train_dataloader(self):
-        RANDAUGMENT=[torchvision.transforms.RandAugment(num_ops=2,magnitude=9) if self.randaugment is not None else []]
+        RANDAUGMENT=[torchvision.transforms.RandAugment(num_ops=2,magnitude=9) ] if self.randaugment is not None else []
 
         train_transforms = torchvision.transforms.Compose([
         torchvision.transforms.Resize(256, PIL.Image.BICUBIC),
