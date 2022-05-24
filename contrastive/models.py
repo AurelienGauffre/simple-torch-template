@@ -23,7 +23,7 @@ import wandb
 
 
 class SwavClassique(pl.LightningModule):
-    def __init__(self,params):
+    def __init__(self, params):
         super().__init__()
         self.params = params
         self.backbone = get_reset_backbone(cifar10=False)
@@ -59,13 +59,14 @@ class SwavClassique(pl.LightningModule):
 
 
 class ResnetClassique(pl.LightningModule):
-    def __init__(self,params,pretrained=False):
+    def __init__(self, params, epochs, pretrained=False):
         super().__init__()
-        self.backbone = get_reset_backbone(cifar10=False,pretrained=pretrained)
-        #self.projection_head = SimCLRProjectionHead(512, 512, 10)
-        self.projection_head = nn.Linear(512,10)
+        self.backbone = get_reset_backbone(cifar10=False, pretrained=pretrained)
+        # self.projection_head = SimCLRProjectionHead(512, 512, 10)
+        self.projection_head = nn.Linear(512, 10)
         self.criterion = nn.CrossEntropyLoss()
-        self.params=params
+        self.params = params
+        self.epochs = epochs
 
     def forward(self, x):
         x = self.backbone(x).flatten(start_dim=1)
@@ -104,17 +105,18 @@ class ResnetClassique(pl.LightningModule):
 
     def configure_optimizers(self):
         optim = torch.optim.Adam(self.parameters(), lr=0.001)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, self.params.epochs)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, self.epochs)
         return [optim], [{"scheduler": scheduler, "interval": "epoch"}]
 
 
 class LinearEvaluation(pl.LightningModule):
     """ Model to train a linear classifier on top of a backbone encoder. Use --"""
 
-    def __init__(self, params,backbone, freeze: bool = False):
+    def __init__(self, params,epochs, backbone, freeze: bool = False):
         super().__init__()
         self.backbone = backbone
-        self.params= params
+        self.params = params
+        self.epochs = epochs
         self.freeze = freeze
 
         if freeze:
@@ -159,14 +161,12 @@ class LinearEvaluation(pl.LightningModule):
 
     def configure_optimizers(self):
         optim = torch.optim.Adam(self.parameters(), lr=0.001)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, self.params.epochs)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, self.epochs)
         return [optim], [{"scheduler": scheduler, "interval": "epoch"}]
 
 
-
-
 class MTLSwavSup(pl.LightningModule):
-    def __init__(self,params):
+    def __init__(self,epochs, params):
         super().__init__()
         self.params = params
         self.backbone = get_reset_backbone()
@@ -176,8 +176,9 @@ class MTLSwavSup(pl.LightningModule):
 
         self.projection_head_sup = nn.Linear(512, 10)
         self.criterion_sup = nn.CrossEntropyLoss()
+        self.epochs = epochs
 
-    def forward(self, x,crops):
+    def forward(self, x, crops):
         multi_crop_features = []
         x = self.backbone(x).flatten(start_dim=1)
         logits = self.projection_head_sup(x)
@@ -189,18 +190,18 @@ class MTLSwavSup(pl.LightningModule):
             p = self.prototypes(z)
             multi_crop_features += [p]
 
-        return logits,multi_crop_features
-    def forward_val(self,x):
+        return logits, multi_crop_features
+
+    def forward_val(self, x):
         x = self.backbone(x).flatten(start_dim=1)
         x = self.projection_head_sup(x)
         return x
-
 
     def training_step(self, batch, batch_idx):
         self.prototypes.normalize()
         crops, _, _ = batch['SwaV']
         x, y, _ = batch['Sup']
-        logits,multi_crop_features = self(x,crops)
+        logits, multi_crop_features = self(x, crops)
 
         preds = torch.argmax(logits, dim=1)
         acc = accuracy(preds, y)
@@ -209,7 +210,7 @@ class MTLSwavSup(pl.LightningModule):
         low_resolution = multi_crop_features[2:]
         train_loss_swav = self.criterion_swav(high_resolution, low_resolution)
         train_loss_sup = self.criterion_sup(logits, y)
-        loss =  train_loss_swav + train_loss_sup
+        loss = train_loss_swav + train_loss_sup
         self.log('total_train_loss', loss, on_step=False,
                  on_epoch=True)  # https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html#train-epoch-level-operations
         self.log('train_loss_swav', train_loss_swav, on_step=False,
@@ -230,7 +231,6 @@ class MTLSwavSup(pl.LightningModule):
                  on_epoch=True)
         self.log('val_accuracy', acc, on_step=False,
                  on_epoch=True)
-
 
     def configure_optimizers(self):
         optim = torch.optim.Adam(self.parameters(), lr=0.001)

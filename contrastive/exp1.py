@@ -16,8 +16,16 @@ from utils import save,load
 
 import argparse
 
+EPOCHS_BASELINE = 200
 SWAV_EPOCHS = 600
+EPOCHS_LE_FT = 100
 SAVE_EVERY_N_EPOCHS = 200
+
+# EPOCHS_BASELINE = 1
+# SWAV_EPOCHS = 2
+# EPOCHS_LE_FT = 1
+# SAVE_EVERY_N_EPOCHS = 1
+
 PROTOTYPES = 512
 RANDAUGMENT = True
 STRATEGY = 'ddp'
@@ -25,7 +33,6 @@ STRATEGY = 'ddp'
 
 parser = argparse.ArgumentParser(description='Parser of parameters.')
 parser.add_argument('--batch_size', type=int, help='batch_size', default=256)
-parser.add_argument('--epochs', type=int, help='number of epochs', default=100)
 parser.add_argument('--wandb', action='store_true', help='using wandb')
 parser.add_argument('--group', type=str, help='group name in wandb', default='Swav-LE-FT')
 parser.add_argument('--exp_name', type=str, help='exp name', default='Swav-LE-FT-imagenette320')
@@ -52,9 +59,9 @@ if __name__ == "__main__":
     wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
                                group=params.group, name='Resnet Baseline RandAugment') if params.wandb else None
 
-    model = ResnetClassique(params)
+    model = ResnetClassique(params,EPOCHS_BASELINE)
     dm_sup = ImagenetteDataModuleSup(params,randaugment=RANDAUGMENT)
-    trainer = pl.Trainer(max_epochs=200, gpus=n_gpus, strategy='ddp', sync_batchnorm=True, logger=wandb_logger,
+    trainer = pl.Trainer(max_epochs=EPOCHS_BASELINE, gpus=n_gpus, strategy='ddp', sync_batchnorm=True, logger=wandb_logger,
                          default_root_dir=params.root_dir)
 
     trainer.fit(model=model, datamodule=dm_sup)
@@ -65,9 +72,9 @@ if __name__ == "__main__":
     wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
                                group=params.group, name='Resnet Pretrained Baseline') if params.wandb else None
 
-    model = ResnetClassique(params,pretrained=True)
+    model = ResnetClassique(params,EPOCHS_BASELINE,pretrained=True)
     dm_sup = ImagenetteDataModuleSup(params,randaugment=RANDAUGMENT)
-    trainer = pl.Trainer(max_epochs=200, gpus=n_gpus, strategy='ddp', sync_batchnorm=True, logger=wandb_logger,
+    trainer = pl.Trainer(max_epochs=EPOCHS_BASELINE, gpus=n_gpus, strategy='ddp', sync_batchnorm=True, logger=wandb_logger,
                          default_root_dir=params.root_dir)
 
     trainer.fit(model=model, datamodule=dm_sup)
@@ -81,7 +88,7 @@ if __name__ == "__main__":
 
     model = SwavClassique(params)
     dm_SwaV = ImagenetteDataModuleSwaV(params)
-    checkpoint_callback=ModelCheckpoint(dirpath=params.root_dir,filename='SwaV-{epoch}-{train_loss:.2f}',every_n_epochs=SAVE_EVERY_N_EPOCHS,save_top_k=20,monitor="train_loss")
+    checkpoint_callback=ModelCheckpoint(dirpath=params.root_dir,filename='SwaV-{epoch}-{train_loss_swav:.2f}',every_n_epochs=SAVE_EVERY_N_EPOCHS,save_top_k=20,monitor="train_loss_swav")
     trainer = pl.Trainer(max_epochs=SWAV_EPOCHS, gpus=n_gpus, strategy='ddp', sync_batchnorm=True, logger=wandb_logger,
                          default_root_dir=params.root_dir, callbacks=[checkpoint_callback])
 
@@ -100,8 +107,8 @@ if __name__ == "__main__":
                                       group=params.group, name=f"FT-SwaV-{ckpt.stem.split('-')[1]}") if params.wandb else None
         # FT
         model_loaded = SwavClassique.load_from_checkpoint(ckpt,params=params)
-        modelFT = LinearEvaluation(params,model_loaded.backbone)
-        trainerFT = pl.Trainer(max_epochs=params.epochs, gpus=n_gpus, strategy='ddp', sync_batchnorm=True,
+        modelFT = LinearEvaluation(params,EPOCHS_LE_FT,model_loaded.backbone)
+        trainerFT = pl.Trainer(max_epochs=EPOCHS_LE_FT, gpus=n_gpus, strategy='ddp', sync_batchnorm=True,
                                logger=wandb_logger_FT,
                                default_root_dir=params.root_dir)
         trainerFT.fit(modelFT,dm_sup)
@@ -113,8 +120,8 @@ if __name__ == "__main__":
         wandb_logger_FT = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
                                       group=params.group, name=f"FT+randaugment-SwaV-{ckpt.stem.split('-')[1]}") if params.wandb else None
         model_loaded = SwavClassique.load_from_checkpoint(ckpt, params=params)
-        modelFT = LinearEvaluation(params, model_loaded.backbone)
-        trainerFT = pl.Trainer(max_epochs=params.epochs, gpus=n_gpus, strategy='ddp', sync_batchnorm=True,
+        modelFT = LinearEvaluation(params,EPOCHS_LE_FT, model_loaded.backbone)
+        trainerFT = pl.Trainer(max_epochs=EPOCHS_LE_FT, gpus=n_gpus, strategy='ddp', sync_batchnorm=True,
                                logger=wandb_logger_FT,
                                default_root_dir=params.root_dir)
         trainerFT.fit(modelFT, dm_sup)
@@ -128,8 +135,8 @@ if __name__ == "__main__":
                                       group=params.group, name=f"LE-SwaV-{ckpt.stem.split('-')[1]}") if params.wandb else None
 
         model_loaded = SwavClassique.load_from_checkpoint(ckpt, params=params)
-        modelLE = LinearEvaluation(params, model_loaded.backbone,freeze=True)
-        trainerLE = pl.Trainer(max_epochs=params.epochs, gpus=n_gpus, strategy='ddp', sync_batchnorm=True,
+        modelLE = LinearEvaluation(params,EPOCHS_LE_FT, model_loaded.backbone,freeze=True)
+        trainerLE = pl.Trainer(max_epochs=EPOCHS_LE_FT, gpus=n_gpus, strategy='ddp', sync_batchnorm=True,
                                logger=wandb_logger_LE,
                                default_root_dir=params.root_dir)
         trainerLE.fit(modelLE, dm_sup)
