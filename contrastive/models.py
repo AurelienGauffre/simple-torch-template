@@ -166,7 +166,7 @@ class LinearEvaluation(pl.LightningModule):
 
 
 class MTLSwavSup(pl.LightningModule):
-    def __init__(self,epochs, params):
+    def __init__(self,epochs, params,scheduler = False):
         super().__init__()
         self.params = params
         self.backbone = get_reset_backbone()
@@ -177,6 +177,7 @@ class MTLSwavSup(pl.LightningModule):
         self.projection_head_sup = nn.Linear(512, 10)
         self.criterion_sup = nn.CrossEntropyLoss()
         self.epochs = epochs
+        self.scheduler = scheduler
 
     def forward(self, x, crops):
         multi_crop_features = []
@@ -234,4 +235,10 @@ class MTLSwavSup(pl.LightningModule):
 
     def configure_optimizers(self):
         optim = torch.optim.Adam(self.parameters(), lr=0.001)
-        return optim
+
+        if self.scheduler :
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optim, self.epochs)
+            return [optim], [{"scheduler": scheduler, "interval": "epoch"}]
+        else:
+            return optim
+
