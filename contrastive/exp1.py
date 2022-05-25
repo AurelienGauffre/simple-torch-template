@@ -18,17 +18,17 @@ from utils import save, load
 import argparse
 
 EPOCHS_BASELINE = 200
-SWAV_EPOCHS = 600
+SWAV_EPOCHS = 250
 EPOCHS_LE_FT = 100
 SAVE_EVERY_N_EPOCHS = 200
 PROTOTYPES = 512
 RANDAUGMENT = True
 STRATEGY = 'ddp'
 
-EPOCHS_BASELINE = 1
-SWAV_EPOCHS = 2
-EPOCHS_LE_FT = 1
-SAVE_EVERY_N_EPOCHS = 1
+# EPOCHS_BASELINE = 1
+# SWAV_EPOCHS = 2
+# EPOCHS_LE_FT = 1
+# SAVE_EVERY_N_EPOCHS = 1
 
 parser = argparse.ArgumentParser(description='Parser of parameters.')
 parser.add_argument('--batch_size', type=int, help='batch_size', default=256)
