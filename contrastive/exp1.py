@@ -19,7 +19,7 @@ import argparse
 
 EPOCHS_BASELINE = 200
 SWAV_EPOCHS = 600
-SWAV_MTL_EPOCHS =
+SWAV_MTL_EPOCHS = 250
 
 
 EPOCHS_LE_FT = 100 # Nb d'epoch pour le finetuning
