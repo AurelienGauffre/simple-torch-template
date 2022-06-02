@@ -154,7 +154,7 @@ if __name__ == "__main__":
     # wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
     #                            group=params.group, name='MTL SwaV/Sup') if params.wandb else None
     #
-    # model = MTLSwavSup(SWAV_EPOCHS, params)
+    # model = MTLSwavSup(SWAV_MTL_EPOCHS, params)
     # dm_MTL = ImagenetteDataModuleSwavSup(params, randaugment=False)
     # trainer = pl.Trainer(max_epochs=SWAV_MTL_EPOCHS, gpus=n_gpus, strategy=STRATEGY, sync_batchnorm=True,
     #                      logger=wandb_logger,
@@ -167,7 +167,7 @@ if __name__ == "__main__":
     wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
                                group=params.group, name='MTL SwaV/Sup Scheduler') if params.wandb else None
 
-    model = MTLSwavSup(SWAV_EPOCHS, params, scheduler=True)
+    model = MTLSwavSup(SWAV_MTL_EPOCHS, params, scheduler=True)
     dm_MTL = ImagenetteDataModuleSwavSup(params, randaugment=False)
     trainer = pl.Trainer(max_epochs=SWAV_MTL_EPOCHS, gpus=n_gpus, strategy=STRATEGY, sync_batchnorm=True,
                          logger=wandb_logger,
@@ -180,7 +180,7 @@ if __name__ == "__main__":
     # wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
     #                            group=params.group, name='MTL SwaV/Sup+randaugment ') if params.wandb else None
     #
-    # model = MTLSwavSup(SWAV_EPOCHS, params)
+    # model = MTLSwavSup(SWAV_MTL_EPOCHS, params)
     # dm_MTL = ImagenetteDataModuleSwavSup(params, randaugment=True)
     # trainer = pl.Trainer(max_epochs=SWAV_MTL_EPOCHS, gpus=n_gpus, strategy=STRATEGY, sync_batchnorm=True,
     #                      logger=wandb_logger,
