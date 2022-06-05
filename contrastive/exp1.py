@@ -8,7 +8,7 @@ import pathlib
 import os
 import wandb
 from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks import ModelCheckpoint,LearningRateMonitor
 
 from models import ResnetClassique, LinearEvaluation, SwavClassique, MTLSwavSup
 from datamodules import Cifar10DataModuleSwaV, Cifar10DataModuleSup, ImagenetteDataModuleSwaV, ImagenetteDataModuleSup, \
@@ -164,14 +164,28 @@ if __name__ == "__main__":
     # wandb.finish()
 
     # MTL Swav_sup Scheduler
+    SWAV_MTL_EPOCHS=10
     wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
-                               group=params.group, name='MTL SwaV/Sup Scheduler') if params.wandb else None
-
+                               group=params.group, name='MTL SwaV/Sup Scheduler 10') if params.wandb else None
     model = MTLSwavSup(SWAV_MTL_EPOCHS, params, scheduler=True)
     dm_MTL = ImagenetteDataModuleSwavSup(params, randaugment=False)
+
+    lr_monitor = LearningRateMonitor(logging_interval='epoch')
     trainer = pl.Trainer(max_epochs=SWAV_MTL_EPOCHS, gpus=n_gpus, strategy=STRATEGY, sync_batchnorm=True,
-                         logger=wandb_logger,
-                         default_root_dir=params.root_dir)
+                         logger=wandb_logger,default_root_dir=params.root_dir,callbacks=[lr_monitor])
+
+    trainer.fit(model=model, datamodule=dm_MTL)
+    wandb.finish()
+
+    SWAV_MTL_EPOCHS = 100
+    wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
+                               group=params.group, name='MTL SwaV/Sup Scheduler 100') if params.wandb else None
+    model = MTLSwavSup(SWAV_MTL_EPOCHS, params, scheduler=True)
+    dm_MTL = ImagenetteDataModuleSwavSup(params, randaugment=False)
+
+    lr_monitor = LearningRateMonitor(logging_interval='epoch')
+    trainer = pl.Trainer(max_epochs=SWAV_MTL_EPOCHS, gpus=n_gpus, strategy=STRATEGY, sync_batchnorm=True,
+                         logger=wandb_logger, default_root_dir=params.root_dir, callbacks=[lr_monitor])
 
     trainer.fit(model=model, datamodule=dm_MTL)
     wandb.finish()
