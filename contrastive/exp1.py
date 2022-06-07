@@ -164,7 +164,7 @@ if __name__ == "__main__":
     # wandb.finish()
 
     # MTL Swav_sup Scheduler
-    SWAV_MTL_EPOCHS=10
+    SWAV_MTL_EPOCHS=150
     wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
                                group=params.group, name='MTL SwaV/Sup Scheduler 10') if params.wandb else None
     model = MTLSwavSup(SWAV_MTL_EPOCHS, params, scheduler=True)
@@ -177,9 +177,22 @@ if __name__ == "__main__":
     trainer.fit(model=model, datamodule=dm_MTL)
     wandb.finish()
 
-    SWAV_MTL_EPOCHS = 100
+    SWAV_MTL_EPOCHS = 300
     wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
                                group=params.group, name='MTL SwaV/Sup Scheduler 100') if params.wandb else None
+    model = MTLSwavSup(SWAV_MTL_EPOCHS, params, scheduler=True)
+    dm_MTL = ImagenetteDataModuleSwavSup(params, randaugment=False)
+
+    lr_monitor = LearningRateMonitor(logging_interval='epoch')
+    trainer = pl.Trainer(max_epochs=SWAV_MTL_EPOCHS, gpus=n_gpus, strategy=STRATEGY, sync_batchnorm=True,
+                         logger=wandb_logger, default_root_dir=params.root_dir, callbacks=[lr_monitor])
+
+    trainer.fit(model=model, datamodule=dm_MTL)
+    wandb.finish()
+
+    SWAV_MTL_EPOCHS = 500
+    wandb_logger = WandbLogger(project='contrastive', entity='aureliengauffre', config=params,
+                               group=params.group, name='MTL SwaV/Sup Scheduler 500') if params.wandb else None
     model = MTLSwavSup(SWAV_MTL_EPOCHS, params, scheduler=True)
     dm_MTL = ImagenetteDataModuleSwavSup(params, randaugment=False)
 
